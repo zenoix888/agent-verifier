@@ -1,0 +1,9 @@
+{
+  "name": "agent-verifier",
+  "version": "0.1.1",
+  "mcpServers": {
+    "agent-verifier": {
+      "httpUrl": "https://agent-verifier.agent-verifier.workers.dev/mcp"
+    }
+  }
+}
