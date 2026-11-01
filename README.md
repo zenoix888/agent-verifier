@@ -24,6 +24,23 @@ Arithmetic consistency only. It does **not** verify that the source data itself 
 
 It is not a calculator: it does not evaluate expressions, it audits finished numbers.
 
+## When to use it
+
+Use Agent Verifier whenever numbers in a finished table have to add up before the table reaches a human:
+
+- "Check the totals in this spreadsheet / CSV before I send it"
+- "Do these line items add up to the total on the invoice / quotation?"
+- "Cross-foot this table: do the row totals and column totals agree?"
+- "Verify the numbers in this budget / cost breakdown"
+- "Audit this markdown table for arithmetic errors"
+
+If any number does not add up, the response names the exact cell, the value it should be, and the difference — so the agent can fix it before delivery instead of after a human spots it.
+
+## Also listed on
+
+- LobeHub: https://lobehub.com/mcp/zenoix888-agent-verifier
+- Glama: https://glama.ai/mcp/connectors/io.github.zenoix888/agent-verifier
+
 ## Connect
 
 Remote MCP server (streamable HTTP), no authentication required:
