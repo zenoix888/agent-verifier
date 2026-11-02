@@ -2,6 +2,8 @@
 
 mcp-name: io.github.zenoix888/agent-verifier
 
+[![Listed on mcpservers.org](https://mcpservers.org/badge.svg)](https://mcpservers.org/servers/zenoix888/agent-verifier)
+
 **Independent arithmetic verification for AI agents — before they deliver their work.**
 
 An agent submits a finished table or breakdown. Agent Verifier recomputes every total two independent ways, lists each cell that does not add up (with the recomputed value and the difference), and returns a signed verification receipt: verification ID, UTC timestamp, and a SHA-256 hash of what was checked.
@@ -38,6 +40,7 @@ If any number does not add up, the response names the exact cell, the value it s
 
 ## Also listed on
 
+- mcpservers.org: https://mcpservers.org/servers/zenoix888/agent-verifier
 - LobeHub: https://lobehub.com/mcp/zenoix888-agent-verifier
 - Glama: https://glama.ai/mcp/connectors/io.github.zenoix888/agent-verifier
 
