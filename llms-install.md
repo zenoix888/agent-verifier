@@ -4,7 +4,7 @@ Agent Verifier is a **remote** MCP server. There is nothing to install, clone or
 
 ## What it does
 
-Independent arithmetic verification for AI agents. Submit a finished table (markdown, CSV, TSV), cost breakdown, invoice, quotation or budget; the service recomputes every row total, column total and subtotal two independent ways, lists each mismatched cell with the recomputed value and difference, and returns a signed verification receipt (verification ID, UTC time, SHA-256 content hash). It checks arithmetic consistency only — it does not verify source data, and it is not a calculator (it does not evaluate expressions).
+Independent arithmetic verification for AI agents. Submit a finished table (markdown, CSV, TSV), cost breakdown, invoice, quotation or budget; the service recomputes every row total, column total and subtotal two independent ways, lists each mismatched cell with the recomputed value and difference, and returns a signed verification receipt (verification ID, UTC time, SHA-256 content hash). It checks arithmetic consistency only — it does not verify source data, and it does not build new calculations for you. Tables may include formulas: supported formulas (`+ − * /`, `SUM`, `AVERAGE`, `MIN`, `MAX`) are evaluated for the arithmetic check, and every formula is audited for pattern deviations, hardcoded values among formulas and broken references, returned as advisory findings.
 
 ## Connect
 
