@@ -6,11 +6,11 @@ mcp-name: io.github.zenoix888/agent-verifier
 
 **Independent arithmetic verification for AI agents — before they deliver their work.**
 
-An agent submits a finished table or breakdown. Agent Verifier recomputes every total two independent ways, lists each cell that does not add up (with the recomputed value and the difference), and returns a signed verification receipt: verification ID, UTC timestamp, and a SHA-256 hash of what was checked.
+An agent submits a finished table or breakdown. Agent Verifier recomputes every total two independent ways, lists each cell that does not add up (with the recomputed value and the difference), and returns a signed verification receipt: verification ID, UTC timestamp, a SHA-256 hash of what was checked, and a public verification URL that anyone can use to confirm the check happened.
 
 - **Live service:** https://agent-verifier.agent-verifier.workers.dev/
 - **Official MCP Registry:** `io.github.zenoix888/agent-verifier`
-- **Status:** live prototype; payments run on the Base Sepolia test network (test funds only, no real money yet)
+- **Status:** v0.3.0, live prototype; payments run on the Base Sepolia test network (test funds only, no real money yet)
 
 ## What it checks
 
@@ -18,6 +18,7 @@ An agent submits a finished table or breakdown. Agent Verifier recomputes every 
 - Cost breakdowns, invoices, quotations, budgets
 - Row totals, column totals, subtotals, and line items against a stated total
 - Formulas inside a submitted table: supported formulas (`+ − * /`, `SUM`, `AVERAGE`, `MIN`, `MAX`) are evaluated, so formula totals are recomputed exactly like typed numbers
+- Common international formats: accounting negatives in parentheses, currency symbols (HK$, US$, $, €, £, ¥, RMB, USD, HKD), semicolon-delimited tables with decimal commas, and percent values (checked when the stated total is itself a percent)
 
 ## Formula audit (new in v0.2.0)
 
@@ -28,9 +29,17 @@ Every formula in a submitted table is also audited, and the findings come back a
 - **Broken references** — formulas that reference themselves, form a circular chain, or point outside the table or at empty cells
 - **Unevaluable formulas** — functions the service does not evaluate (e.g. VLOOKUP) are noted with the reason, never guessed
 
+## Verify a receipt (new in v0.3.0)
+
+Every receipt carries a public verification URL — `https://agent-verifier.agent-verifier.workers.dev/receipt/<verificationId>` — and anyone can open it, no account needed. The page shows the receipt's stored fingerprint: the verification ID, when the check was issued (UTC), the SHA-256 of the content that was checked, the verdict, and the issue and formula-finding counts. It proves that a check with that ID ran at that time and produced that verdict on content with that fingerprint.
+
+To test a specific table against a receipt, POST it to the free `POST /v1/check-receipt` endpoint with `{ "verificationId": "...", "content": "<the exact table>" }`: the service hashes the content in memory and answers `hashMatches: true` only if it matches the receipt byte-for-byte.
+
+What it does **not** prove: that the source data was true — the receipt covers arithmetic consistency only (see the scope wording below). And the table itself was never stored: only its fingerprint is kept, so the check can be confirmed but the content cannot be shown or recovered. Receipts exist only for checks run since v0.3.0; earlier receipts were never stored and cannot be looked up.
+
 ## Track record
 
-As of 12 Nov 2026: 30 verifications run for outside agents since launch on 27 Oct 2026, with errors caught in 10 of those tables. Formula audit added 12 Nov 2026. Live aggregate counters: https://agent-verifier.agent-verifier.workers.dev/stats
+As of 12 Nov 2026: 30 verifications run for outside agents since launch on 27 Oct 2026, with errors caught in 10 of those tables. Formula audit added 12 Nov 2026. Public receipt verification also went live on 12 Nov 2026 (v0.3.0) — every receipt since then carries a URL anyone can use to confirm the check happened. Live aggregate counters: https://agent-verifier.agent-verifier.workers.dev/stats
 
 ## What it does not check
 
@@ -85,7 +94,7 @@ Example client configuration:
 
 ## Privacy
 
-**Zero retention.** Submissions are processed in memory only and are never stored or logged. Usage is counted in aggregate only — see the public counters at https://agent-verifier.agent-verifier.workers.dev/stats
+**Zero content retention.** Submissions are processed in memory only; the tables themselves are never stored or logged. The one thing kept is each receipt's fingerprint — its verification ID, issue time, the SHA-256 of what was checked, the verdict and the counts — so that a receipt can be looked up and confirmed later (see Verify a receipt above). Usage is counted in aggregate only — see the public counters at https://agent-verifier.agent-verifier.workers.dev/stats
 
 ## This repository
 
