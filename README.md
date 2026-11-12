@@ -10,7 +10,7 @@ An agent submits a finished table or breakdown. Agent Verifier recomputes every 
 
 - **Live service:** https://agent-verifier.agent-verifier.workers.dev/
 - **Official MCP Registry:** `io.github.zenoix888/agent-verifier`
-- **Status:** v0.3.0, live prototype; payments run on the Base Sepolia test network (test funds only, no real money yet)
+- **Status:** v0.4.0, live prototype; payments run on the Base Sepolia test network (test funds only, no real money yet)
 
 ## What it checks
 
@@ -19,6 +19,7 @@ An agent submits a finished table or breakdown. Agent Verifier recomputes every 
 - Row totals, column totals, subtotals, and line items against a stated total
 - Formulas inside a submitted table: supported formulas (`+ − * /`, `SUM`, `AVERAGE`, `MIN`, `MAX`) are evaluated, so formula totals are recomputed exactly like typed numbers
 - Common international formats: accounting negatives in parentheses, currency symbols (HK$, US$, $, €, £, ¥, RMB, USD, HKD), semicolon-delimited tables with decimal commas, and percent values (checked when the stated total is itself a percent)
+- Real .xlsx workbooks uploaded as files — the workbook itself is audited cell by cell (see "Audit an Excel file" below)
 
 ## Formula audit (new in v0.2.0)
 
@@ -37,9 +38,23 @@ To test a specific table against a receipt, POST it to the free `POST /v1/check-
 
 What it does **not** prove: that the source data was true — the receipt covers arithmetic consistency only (see the scope wording below). And the table itself was never stored: only its fingerprint is kept, so the check can be confirmed but the content cannot be shown or recovered. Receipts exist only for checks run since v0.3.0; earlier receipts were never stored and cannot be looked up.
 
+## Audit an Excel file (new in v0.4.0)
+
+Instead of pasting a table, upload the real workbook: `POST https://agent-verifier.agent-verifier.workers.dev/v1/verify-file` with the raw .xlsx bytes as the request body. Limits: file ≤ 2 MB, ≤ 20,000 cells across all sheets (a larger input returns OUT_OF_SCOPE, with the exceeded limit named). Each sheet is audited:
+
+- **Stored values recomputed** — every formula the service can evaluate is recomputed from the file's own inputs and compared with the value stored in the file; a stale or wrong stored value is flagged with its sheet, cell and the difference
+- **Formula audit per sheet** — the same pattern-deviation, hardcoded-value, broken-reference and unevaluable findings as the table audit
+- **Cross-foot totals** — row and column totals on each sheet's stored values are checked for adding up
+- **Structure health** — duplicated cell entries, shared-string references out of range, formula cells with no stored value, sheets whose data part is missing
+- **Recalc-fragility advisories** — formulas such as `DATEVALUE`/`VALUE` applied to a whole range, which may change value when Excel recalculates the file; the advisory says so if the workbook forces a full recalculation on load
+
+The receipt works the same way: its fingerprint is the SHA-256 of the file itself, checkable at the receipt's public verification URL, and the file bytes are processed in memory only, never stored.
+
+One limit to be plain about: this is **not a real Excel engine**. Formulas inside the supported subset (`+ − * /`, parentheses, `%`, cell references, `SUM`/`AVERAGE`/`MIN`/`MAX` over ranges) are recomputed; anything richer (VLOOKUP, IF, cross-sheet references, defined names) is counted and noted as unevaluable — never evaluated by another engine and never guessed. Macros, charts, images and pivot caches are not inspected, and date-styled cells are compared by their stored serial numbers.
+
 ## Track record
 
-As of 12 Nov 2026: 30 verifications run for outside agents since launch on 27 Oct 2026, with errors caught in 10 of those tables. Formula audit added 12 Nov 2026. Public receipt verification also went live on 12 Nov 2026 (v0.3.0) — every receipt since then carries a URL anyone can use to confirm the check happened. Live aggregate counters: https://agent-verifier.agent-verifier.workers.dev/stats
+As of 12 Nov 2026: 30 verifications run for outside agents since launch on 27 Oct 2026, with errors caught in 10 of those tables. Formula audit added 12 Nov 2026. Public receipt verification also went live on 12 Nov 2026 (v0.3.0) — every receipt since then carries a URL anyone can use to confirm the check happened. Excel file audit went live on 13 Nov 2026 (v0.4.0) — a real .xlsx upload is now audited cell by cell, stored values included. Live aggregate counters: https://agent-verifier.agent-verifier.workers.dev/stats
 
 ## What it does not check
 
@@ -74,6 +89,7 @@ Remote MCP server (streamable HTTP), no authentication required:
 
 - **MCP endpoint:** `POST https://agent-verifier.agent-verifier.workers.dev/mcp` — tool: `verify_numbers`
 - **HTTP API:** `POST https://agent-verifier.agent-verifier.workers.dev/v1/verify` with a JSON body `{ "content": "<your table or breakdown>" }`
+- **Excel file audit:** `POST https://agent-verifier.agent-verifier.workers.dev/v1/verify-file` with the raw .xlsx bytes as the body (≤ 2 MB, ≤ 20,000 cells)
 
 Example client configuration:
 

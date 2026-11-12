@@ -1,6 +1,6 @@
 {
   "$schema": "https://static.modelcontextprotocol.io/schemas/2025-12-11/server.schema.json",
-  "description": "Verify totals in finished tables add up. Arithmetic + formula audit, publicly checkable receipt.",
+  "description": "Verify totals in finished tables and .xlsx files add up. Formula audit, publicly checkable receipt.",
   "name": "io.github.zenoix888/agent-verifier",
   "remotes": [
     {
@@ -9,6 +9,6 @@
     }
   ],
   "title": "Agent Verifier — Independent Number Verification",
-  "version": "0.3.0",
+  "version": "0.4.0",
   "websiteUrl": "https://agent-verifier.agent-verifier.workers.dev/"
 }
