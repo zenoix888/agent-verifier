@@ -10,7 +10,7 @@ An agent submits a finished table or breakdown. Agent Verifier recomputes every 
 
 - **Live service:** https://agent-verifier.agent-verifier.workers.dev/
 - **Official MCP Registry:** `io.github.zenoix888/agent-verifier`
-- **Status:** v0.4.2, live prototype; payments run on the Base Sepolia test network (test funds only, no real money yet)
+- **Status:** v0.4.3, live prototype; payments run on the Base Sepolia test network (test funds only, no real money yet)
 
 ## What it checks
 
