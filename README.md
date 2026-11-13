@@ -6,11 +6,11 @@ mcp-name: io.github.zenoix888/agent-verifier
 
 **Independent arithmetic verification for AI agents — before they deliver their work.**
 
-An agent submits a finished table or breakdown. Agent Verifier recomputes every total two independent ways, lists each cell that does not add up (with the recomputed value and the difference), and returns a signed verification receipt: verification ID, UTC timestamp, a SHA-256 hash of what was checked, and a public verification URL that anyone can use to confirm the check happened.
+An agent submits a finished table or breakdown. Agent Verifier recomputes every total two independent ways, lists each cell that does not add up (with the recomputed value and the difference), and returns a publicly checkable verification receipt: verification ID, UTC timestamp, a SHA-256 hash of what was checked, and a public verification URL that anyone can use to confirm the check happened.
 
 - **Live service:** https://agent-verifier.agent-verifier.workers.dev/
 - **Official MCP Registry:** `io.github.zenoix888/agent-verifier`
-- **Status:** v0.4.0, live prototype; payments run on the Base Sepolia test network (test funds only, no real money yet)
+- **Status:** v0.4.2, live prototype; payments run on the Base Sepolia test network (test funds only, no real money yet)
 
 ## What it checks
 
@@ -23,7 +23,7 @@ An agent submits a finished table or breakdown. Agent Verifier recomputes every 
 
 ## Formula audit (new in v0.2.0)
 
-Every formula in a submitted table is also audited, and the findings come back as advisory `formulaFindings` — suspicions to review, never a change to the arithmetic verdict:
+Every formula in a submitted table is also audited, and the findings come back as advisory `formulaFindings` — suspicions to review, never a change to the arithmetic verdict in a pasted table. (In an uploaded workbook the line is stricter: error-level findings there are proven discrepancies and do count toward a MISMATCH — see "Audit an Excel file" below.)
 
 - **Pattern deviations** — a formula whose shape differs from the dominant pattern of its row or column, e.g. a SUM that quietly covers a shorter range than its neighbours
 - **Hardcoded values among formulas** — a typed, dead number sitting in a row or column where the other cells are formulas
@@ -32,7 +32,7 @@ Every formula in a submitted table is also audited, and the findings come back a
 
 ## Verify a receipt (new in v0.3.0)
 
-Every receipt carries a public verification URL — `https://agent-verifier.agent-verifier.workers.dev/receipt/<verificationId>` — and anyone can open it, no account needed. The page shows the receipt's stored fingerprint: the verification ID, when the check was issued (UTC), the SHA-256 of the content that was checked, the verdict, and the issue and formula-finding counts. It proves that a check with that ID ran at that time and produced that verdict on content with that fingerprint.
+Every receipt carries a public verification URL — `https://agent-verifier.agent-verifier.workers.dev/receipt/<verificationId>` — and anyone can open it, no account needed. The page shows the receipt's stored fingerprint: the verification ID, when the check was issued (UTC), the SHA-256 of the content that was checked, the verdict, the number of checks performed, and the issue and formula-finding counts. It proves that a check with that ID ran at that time and produced that verdict on content with that fingerprint.
 
 To test a specific table against a receipt, POST it to the free `POST /v1/check-receipt` endpoint with `{ "verificationId": "...", "content": "<the exact table>" }`: the service hashes the content in memory and answers `hashMatches: true` only if it matches the receipt byte-for-byte.
 
@@ -47,6 +47,7 @@ Instead of pasting a table, upload the real workbook: `POST https://agent-verifi
 - **Cross-foot totals** — row and column totals on each sheet's stored values are checked for adding up
 - **Structure health** — duplicated cell entries, shared-string references out of range, formula cells with no stored value, sheets whose data part is missing
 - **Recalc-fragility advisories** — formulas such as `DATEVALUE`/`VALUE` applied to a whole range, which may change value when Excel recalculates the file; the advisory says so if the workbook forces a full recalculation on load
+- **Unverified regions refuse a verdict** — a workbook with nothing checkable returns UNABLE_TO_VERIFY, and if the totals agree but a numeric column was covered by no check, the workbook still returns UNABLE_TO_VERIFY naming the column, rather than a quiet MATCH
 
 The receipt works the same way: its fingerprint is the SHA-256 of the file itself, checkable at the receipt's public verification URL, and the file bytes are processed in memory only, never stored.
 
@@ -55,6 +56,10 @@ One limit to be plain about: this is **not a real Excel engine**. Formulas insid
 ## Track record
 
 As of 12 Nov 2026: 30 verifications run for outside agents since launch on 27 Oct 2026, with errors caught in 10 of those tables. Formula audit added 12 Nov 2026. Public receipt verification also went live on 12 Nov 2026 (v0.3.0) — every receipt since then carries a URL anyone can use to confirm the check happened. Excel file audit went live on 13 Nov 2026 (v0.4.0) — a real .xlsx upload is now audited cell by cell, stored values included. Live aggregate counters: https://agent-verifier.agent-verifier.workers.dev/stats
+
+## What a verdict means
+
+Every result states its own coverage: how many checks ran, the tolerance applied (0.005), and any numeric columns or formulas that could not be checked. A MATCH certifies only the totals that were located and recomputed — regions with no claimed total are reported as unverified, never silently passed. If a table's totals agree but a whole numeric column was covered by no check, the answer is UNABLE_TO_VERIFY naming that column; a submission with nothing checkable at all gets the same answer, never a quiet MATCH. The same discipline applies to uploaded workbooks.
 
 ## What it does not check
 
