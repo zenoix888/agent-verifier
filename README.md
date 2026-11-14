@@ -4,6 +4,8 @@ mcp-name: io.github.zenoix888/agent-verifier
 
 [![Listed on mcpservers.org](https://mcpservers.org/badge.svg)](https://mcpservers.org/servers/zenoix888/agent-verifier)
 
+[![M8ven Score](https://m8ven.ai/badge/mcp/zenoix888-agent-verifier-1h8879)](https://m8ven.ai/mcp/zenoix888-agent-verifier-1h8879?s=readme)
+
 **Independent arithmetic verification for AI agents — before they deliver their work.**
 
 An agent submits a finished table or breakdown. Agent Verifier recomputes every total two independent ways, lists each cell that does not add up (with the recomputed value and the difference), and returns a publicly checkable verification receipt: verification ID, UTC timestamp, a SHA-256 hash of what was checked, and a public verification URL that anyone can use to confirm the check happened.
