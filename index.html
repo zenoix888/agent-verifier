@@ -1,0 +1,901 @@
+<!doctype html>
+<html lang="zh-Hant-HK">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <meta name="color-scheme" content="light dark" />
+    <link rel="icon" href="data:," />
+    <title>純收音探針</title>
+    <style>
+      :root {
+        --bg: #f4f6f3;
+        --surface: #ffffff;
+        --surface2: #e9eee7;
+        --ink: #17211a;
+        --ink-soft: #43524a;
+        --line: #c9d4c9;
+        --accent: #0e7a4d;
+        --accent-ink: #ffffff;
+        --warn-bg: #fdf3e0;
+        --warn-line: #d9a83e;
+        --warn-ink: #5c430a;
+        --danger: #b3372c;
+        --ok: #0e7a4d;
+        --meter-bg: #dde5dc;
+        --banner-bg: #0e7a4d;
+        --banner-ink: #ffffff;
+        --log-bg: #101812;
+        --log-ink: #cfe6d2;
+      }
+      @media (prefers-color-scheme: dark) {
+        :root {
+          --bg: #10150f;
+          --surface: #1a211a;
+          --surface2: #242e24;
+          --ink: #eef4ee;
+          --ink-soft: #b3c2b4;
+          --line: #3a473a;
+          --accent: #2fae74;
+          --accent-ink: #08130c;
+          --warn-bg: #33290f;
+          --warn-line: #a37f22;
+          --warn-ink: #f3dd9a;
+          --danger: #e0705f;
+          --ok: #2fae74;
+          --meter-bg: #2c382c;
+          --banner-bg: #14532d;
+          --banner-ink: #eafff1;
+          --log-bg: #0a0f0a;
+          --log-ink: #cfe6d2;
+        }
+      }
+      * { box-sizing: border-box; }
+      html { -webkit-text-size-adjust: 100%; }
+      body {
+        margin: 0;
+        background: var(--bg);
+        color: var(--ink);
+        font-family: "PingFang HK", "PingFang TC", "Microsoft JhengHei", "Noto Sans TC", system-ui, sans-serif;
+        font-size: 19px;
+        line-height: 1.55;
+      }
+      main { max-width: 760px; margin: 0 auto; padding: 16px 14px 48px; }
+      h1 { font-size: 30px; margin: 6px 0 4px; line-height: 1.25; }
+      h2 { font-size: 23px; margin: 0 0 10px; line-height: 1.3; }
+      p { margin: 8px 0; }
+      .sub { color: var(--ink-soft); font-size: 18px; margin-top: 0; }
+      section {
+        background: var(--surface);
+        border: 1px solid var(--line);
+        border-radius: 14px;
+        padding: 16px;
+        margin: 16px 0;
+      }
+      .honest {
+        background: var(--warn-bg);
+        border: 1px solid var(--warn-line);
+        color: var(--warn-ink);
+        border-radius: 14px;
+        padding: 14px 16px;
+        margin: 16px 0;
+        font-size: 18px;
+      }
+      .honest p { margin: 6px 0; }
+      .honest strong { font-weight: 700; }
+
+      /* 大開始／停止掣 */
+      #btnMain {
+        display: block;
+        width: 100%;
+        min-height: 92px;
+        font-size: 30px;
+        font-weight: 800;
+        border: none;
+        border-radius: 16px;
+        background: var(--accent);
+        color: var(--accent-ink);
+        cursor: pointer;
+        letter-spacing: 1px;
+      }
+      #btnMain.running { background: var(--danger); color: #fff; }
+      #btnMain:active { transform: scale(0.99); }
+      .statusline {
+        display: flex; flex-wrap: wrap; gap: 8px 18px;
+        margin-top: 12px; font-size: 19px;
+      }
+      .statusline b { font-variant-numeric: tabular-nums; }
+      .dot { display: inline-block; width: 13px; height: 13px; border-radius: 50%; background: #98a398; vertical-align: middle; margin-right: 6px; }
+      .dot.on { background: var(--ok); }
+      .dot.err { background: var(--danger); }
+
+      /* 音量錶 */
+      .meterwrap { background: var(--meter-bg); border-radius: 10px; height: 34px; overflow: hidden; }
+      #meter { height: 100%; width: 0%; background: var(--accent); transition: width 90ms linear; }
+      .meterlabel { font-size: 16px; color: var(--ink-soft); margin-top: 6px; }
+
+      /* 即時轉字 */
+      #liveBox {
+        background: var(--surface2);
+        border-radius: 10px;
+        padding: 12px 14px;
+        min-height: 64px;
+        font-size: 21px;
+      }
+      #liveInterim { color: var(--ink-soft); }
+      #finalList { list-style: none; margin: 12px 0 0; padding: 0; }
+      #finalList li { padding: 9px 0; border-top: 1px solid var(--line); font-size: 20px; }
+      #finalList .t { color: var(--ink-soft); font-size: 15px; font-variant-numeric: tabular-nums; margin-right: 8px; white-space: nowrap; }
+
+      /* 數字大字 */
+      .biggrid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+      @media (max-width: 480px) { .biggrid { grid-template-columns: 1fr; } }
+      .stat { background: var(--surface2); border-radius: 10px; padding: 12px 14px; }
+      .stat .k { font-size: 16px; color: var(--ink-soft); }
+      .stat .v { font-size: 30px; font-weight: 800; font-variant-numeric: tabular-nums; line-height: 1.2; }
+      .barwrap { background: var(--meter-bg); border-radius: 8px; height: 22px; overflow: hidden; margin-top: 10px; }
+      #storageBar { height: 100%; width: 0%; background: var(--accent); }
+
+      /* 招呼觸發 */
+      #banner {
+        display: none;
+        position: fixed; left: 10px; right: 10px; top: 10px; z-index: 50;
+        background: var(--banner-bg); color: var(--banner-ink);
+        border-radius: 16px; padding: 20px 18px;
+        box-shadow: 0 10px 34px rgba(0,0,0,0.35);
+      }
+      #banner .big { font-size: 32px; font-weight: 800; line-height: 1.25; }
+      #banner .small { font-size: 18px; opacity: 0.92; margin-top: 4px; }
+      #banner button {
+        margin-top: 12px; min-height: 52px; padding: 0 26px;
+        font-size: 19px; font-weight: 700;
+        border: none; border-radius: 10px;
+        background: #ffffff; color: #14532d; cursor: pointer;
+      }
+      textarea, input[type="text"] {
+        width: 100%; font-size: 19px; padding: 12px;
+        border: 1px solid var(--line); border-radius: 10px;
+        background: var(--surface); color: var(--ink);
+        font-family: inherit;
+      }
+      .btn {
+        min-height: 56px; padding: 0 22px;
+        font-size: 20px; font-weight: 700;
+        border-radius: 12px; border: 1px solid var(--line);
+        background: var(--surface2); color: var(--ink); cursor: pointer;
+      }
+      .btn.primary { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); }
+      .btn:active { transform: scale(0.99); }
+
+      /* 測試句 */
+      .sentence { border: 1px solid var(--line); border-radius: 12px; padding: 14px; margin: 12px 0; }
+      .sentence.active { border-color: var(--accent); border-width: 2px; }
+      .sentence .target { font-size: 22px; font-weight: 700; }
+      .sentence .heard { margin-top: 8px; font-size: 19px; background: var(--surface2); border-radius: 8px; padding: 9px 11px; min-height: 48px; }
+      .sentence .heard .none { color: var(--ink-soft); }
+      .judge { display: flex; gap: 10px; margin-top: 10px; flex-wrap: wrap; }
+      .judge button { flex: 1 1 120px; min-height: 60px; font-size: 22px; font-weight: 800; border-radius: 12px; cursor: pointer; border: 2px solid var(--line); background: var(--surface); color: var(--ink); }
+      .judge button.ok.sel { background: var(--ok); border-color: var(--ok); color: #fff; }
+      .judge button.no.sel { background: var(--danger); border-color: var(--danger); color: #fff; }
+      .pickline { margin-top: 10px; }
+      .pickline button { min-height: 48px; font-size: 17px; padding: 0 16px; }
+      #scoreLine { font-size: 22px; font-weight: 800; margin-top: 6px; }
+
+      /* 步驟清單 */
+      ol.steps { margin: 6px 0 0; padding-left: 26px; }
+      ol.steps li { margin: 11px 0; font-size: 19px; }
+      ol.steps .mins { color: var(--ink-soft); font-size: 16px; white-space: nowrap; }
+
+      /* 事件紀錄 */
+      #eventLog {
+        background: var(--log-bg); color: var(--log-ink);
+        border-radius: 10px; padding: 12px 14px;
+        font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+        font-size: 15.5px; line-height: 1.6;
+        max-height: 340px; overflow-y: auto;
+        white-space: pre-wrap; word-break: break-word;
+      }
+      #btnDownload { width: 100%; min-height: 76px; font-size: 25px; }
+      .note { color: var(--ink-soft); font-size: 16.5px; }
+      .hidden { display: none !important; }
+    </style>
+  </head>
+  <body>
+
+    <div id="banner" role="alert">
+      <div class="big" id="bannerBig">你同 John 講緊嘢</div>
+      <div class="small">招呼觸發成功 — 日後嘅即時建議，就會用呢種方式震一下、出呢行字俾你。</div>
+      <button id="bannerClose" type="button">知道喇</button>
+    </div>
+
+    <main>
+      <h1>純收音探針</h1>
+      <p class="sub">第一段測試：喺你部 OPPO 度試五關，睇下「背景收音＋即時轉字＋招呼觸發」呢條路行唔行得通。全程約 15 分鐘。</p>
+
+      <div class="honest">
+        <p><strong>老實講清楚先：</strong></p>
+        <p>1. 呢頁嘅語音轉字，係 Chrome 經 Google 嘅免費語音服務處理，<strong>唔係部電話自己計</strong>。呢一關試嘅係「轉字準唔準、觸發得唔得」，唔係試本機引擎。</p>
+        <p>2. <strong>熄屏之後，瀏覽器多數會停收音</strong> —— 呢個係預期結果，唔係壞咗。探針就係要實測你部 OPPO 熄屏／入背景之後，實際停成點、停幾耐，寫入紀錄。</p>
+        <p>3. 分清楚兩樣嘢：<strong>你講嘅聲音會經 Chrome 傳去 Google 做辨識</strong>（即第 1 點嗰個免費服務，冇得揀）；但<strong>呢頁自己唔會儲存或者上傳任何錄音檔</strong> —— 錄音只喺記憶體入面量度大小，一撳停止即刻棄晒。轉出嚟嘅文字、電量、觸發同判定紀錄，只留喺呢頁，你撳「下載紀錄」先會變成一個檔案俾你傳返嚟。</p>
+      </div>
+
+      <section aria-label="開始停止">
+        <button id="btnMain" type="button">▶ 開始測試</button>
+        <div class="statusline">
+          <span><span class="dot" id="dotRec"></span><span id="recState">未開始</span></span>
+          <span>已行時間：<b id="elapsed">00:00</b></span>
+          <span>辨識重啟次數：<b id="restartCount">0</b></span>
+        </div>
+        <p class="note" id="supportNote"></p>
+      </section>
+
+      <section aria-label="即時收音同轉字">
+        <h2>即時收音同轉字</h2>
+        <div class="meterwrap"><div id="meter"></div></div>
+        <div class="meterlabel">咪高峰音量（講嘢嗰陣條錶應該會郁）</div>
+        <div id="liveBox" style="margin-top:12px;">
+          <span id="liveFinalHint">未開始。</span>
+          <span id="liveInterim"></span>
+        </div>
+        <ul id="finalList"></ul>
+      </section>
+
+      <section aria-label="電量實測">
+        <h2>第四關：電量實測</h2>
+        <div class="biggrid">
+          <div class="stat"><div class="k">開始嗰陣電量</div><div class="v" id="batStart">—</div></div>
+          <div class="stat"><div class="k">而家電量</div><div class="v" id="batNow">—</div></div>
+          <div class="stat"><div class="k">跌咗</div><div class="v" id="batDrop">—</div></div>
+          <div class="stat"><div class="k">推算每小時食電</div><div class="v" id="batPerHour">—</div></div>
+        </div>
+        <p style="margin-top:12px;">充電狀態：<b id="batCharging">—</b></p>
+        <p class="note">閘口參考：傾緊嗰陣每小時食電 ≤8% 為之過關（呢個數會寫入紀錄俾 Muse 對）。測試時間短，推算數只作參考。</p>
+      </section>
+
+      <section aria-label="儲存實測">
+        <h2>第五關：儲存實測</h2>
+        <div class="biggrid">
+          <div class="stat"><div class="k">已量度錄音數據</div><div class="v" id="storMB">0 MB</div></div>
+          <div class="stat"><div class="k">推算每小時佔</div><div class="v" id="storPerHour">—</div></div>
+        </div>
+        <div class="barwrap"><div id="storageBar"></div></div>
+        <p style="margin-top:10px;">對住 1GB 硬上限：用咗 <b id="storPct">0%</b></p>
+        <p class="note">錄音數據只喺記憶體入面逐段量大細，量完即棄，唔會寫入部電話儲存，亦唔會另外上傳去任何地方。撳停止嗰陣全部清零。（注意：辨識用嘅聲音係經 Chrome 傳去 Google 嗰條路，見頁頂第 1、3 點。）</p>
+      </section>
+
+<section aria-label="招呼觸發">
+<h2>第三關：招呼觸發</h2>
+<p>對住電話講「<b>Hi John</b>」或者「<b>Hi Peter</b>」呢類招呼加人名 —— 觸發到就會<strong>震一下</strong>，兼喺畫面頂彈出一行大字（即係模擬日後俾你嗰種建議通知）。</p>
+<p>已觸發：<b id="triggerCount">0</b> 次　最後一次：<b id="triggerLast">未有</b></p>
+<p style="margin-bottom:6px;">人名表（用逗號分隔，改完撳「更新人名表」）：</p>
+<textarea id="nameList" rows="2">John, Peter, Tom, David, Mary</textarea>
+<div style="margin-top:10px; display:flex; gap:10px; flex-wrap:wrap;">
+<button class="btn primary" id="btnNames" type="button" style="flex:1 1 180px;">更新人名表</button>
+<button class="btn" id="btnTestBanner" type="button" style="flex:1 1 180px;">試彈一次提示</button>
+</div>
+</section>
+
+<section aria-label="轉字準繩測試">
+<h2>第二關：轉字準繩（五句照稿讀）</h2>
+<p>做法：撳一句嘅「<b>揀呢句嚟讀</b>」，然後照稿讀出嚟。讀完，嗰句下面會顯示部機聽到嘅字，你再撳「<b>啱</b>」或者「<b>錯</b>」判定（差一個人名或者數字都當錯，照直撳）。</p>
+<div id="sentences"></div>
+<div id="scoreLine">成績：未判任何一句</div>
+</section>
+
+<section aria-label="背景熄屏測試">
+<h2>第一關：背景／熄屏存活</h2>
+<p>開始測試之後，跟住做兩個動作，返嚟睇「事件紀錄」就知結果：</p>
+<p><b>（一）入背景：</b>撳電話主頁掣，將 Chrome 收去背景，照樣對住電話講幾句嘢，等 2 分鐘，先再開返呢頁。</p>
+<p><b>（二）熄屏：</b>撳電源掣熄屏，等 2 分鐘，再開屏返嚟。</p>
+<p>入背景／熄屏期間，辨識停咗幾多次、停咗幾耐、返嚟有冇自己行返，都會自動寫入事件紀錄同下載檔。<strong>熄屏後停收音係預期結果</strong>，照實測就得，唔使重做。</p>
+<div class="biggrid">
+<div class="stat"><div class="k">入背景次數</div><div class="v" id="bgCount">0</div></div>
+<div class="stat"><div class="k">最長無聲／停頓</div><div class="v" id="gapMax">—</div></div>
+</div>
+</section>
+
+<section aria-label="測試步驟">
+<h2>測試步驟（約 15 分鐘）</h2>
+<ol class="steps">
+<li>撳上面粒「開始測試」，彈權限嗰陣俾 Chrome 用咪高峰。<span class="mins">（1 分鐘）</span></li>
+<li>對住電話隨便講幾句廣東話夾英文，睇下「即時轉字」出唔出到字、音量錶郁唔郁。<span class="mins">（1 分鐘）</span></li>
+<li>去「第二關」，逐句照稿讀晒五句，每句撳「啱」或者「錯」。<span class="mins">（5 分鐘）</span></li>
+<li>去「第三關」，講「Hi John」、「Hi Peter」試招呼觸發，睇下有冇震同彈大字。<span class="mins">（2 分鐘）</span></li>
+<li>撳主頁掣將頁面收入背景，照樣講嘢，等 2 分鐘再開返嚟。<span class="mins">（2 分鐘）</span></li>
+<li>熄屏等 2 分鐘，再開屏返嚟睇事件紀錄（熄屏停收音係預期嘅）。<span class="mins">（2 分鐘）</span></li>
+<li>撳「停止」，再撳最底「下載紀錄」，將個文字檔傳返俾 Muse 分析。<span class="mins">（1 分鐘）</span></li>
+</ol>
+<p class="note">全程唔使插電，咁先量到真食電。如果中途要停，隨時撳「停止」再下載紀錄都得，唔使做齊。</p>
+</section>
+
+<section aria-label="事件紀錄">
+<h2>事件紀錄</h2>
+<div id="eventLog">（未開始）</div>
+</section>
+
+<section aria-label="下載紀錄">
+<h2>做完之後</h2>
+<button class="btn primary" id="btnDownload" type="button">⬇ 下載紀錄（文字檔）</button>
+<p class="note" style="margin-top:10px;">成份探針紀錄 —— 電量、儲存、轉字原文、招呼觸發、五句啱錯判定、背景／熄屏事件 —— 會下載成一個文字檔，你傳返俾 Muse 就得。唔撳呢個掣，啲紀錄唔會離開呢頁。</p>
+</section>
+
+</main>
+
+<script>
+(function () {
+"use strict";
+
+// ---------- 基本工具 ----------
+function $(id) { return document.getElementById(id);}
+function now() { return new Date();}
+function fmtTime(d) {
+function p(n) { return (n < 10? "0": "") + n;}
+return p(d.getHours()) + ":" + p(d.getMinutes()) + ":" + p(d.getSeconds());
+}
+function fmtClock(d) {
+function p(n) { return (n < 10? "0": "") + n;}
+return d.getFullYear() + "-" + p(d.getMonth() + 1) + "-" + p(d.getDate()) + " " + fmtTime(d);
+}
+function fmtDur(ms) {
+var s = Math.floor(ms / 1000);
+var m = Math.floor(s / 60);
+s = s % 60;
+return (m < 10? "0": "") + m + ":" + (s < 10? "0": "") + s;
+}
+function esc(s) {
+return String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+}
+
+// ---------- 狀態 ----------
+var S = {
+running: false,
+startedAt: null,
+stoppedAt: null,
+stream: null,
+audioCtx: null,
+analyser: null,
+rafId: null,
+recorder: null,
+totalBytes: 0,
+recog: null,
+recogLang: "yue-Hant-HK",
+recogWanted: false,
+restarts: 0,
+lastResultAt: null,
+gapStart: null,
+maxGapMs: 0,
+hiddenCount: 0,
+hiddenSince: null,
+hiddenTotalMs: 0,
+hiddenWhileEnded: 0,
+battery: null,
+batStartPct: null,
+batNowPct: null,
+batCharging: null,
+names: ["John", "Peter", "Tom", "David", "Mary"],
+lastTrigger: {}, // name -> timestamp ms（冷卻用）
+triggerCount: 0,
+triggerLastText: "未有",
+transcripts: [], // {time, text}
+events: [], // 字串行
+activeSentence: -1,
+tickTimer: null,
+batTimer: null
+};
+
+var SENTENCES = [
+{ target: "Hi John，早晨，陣間十點半我哋開會，你記得帶埋份合約嚟。", tag: "招呼＋人名＋時間", heard: "", judge: null},
+{ target: "Peter 話個預算要加到一百二十萬，下星期三之前要批。", tag: "人名＋大數字＋死線", heard: "", judge: null},
+{ target: "Tom，我應承你，星期五下晝三點之前交份報告俾你。", tag: "承諾句", heard: "", judge: null},
+{ target: "David，嗰個數係四百四十九點二五，唔好寫錯。", tag: "小數數字", heard: "", judge: null},
+{ target: "Mary，麻煩你聽朝九點打俾我，電話九一二三四五六七。", tag: "人名＋電話號碼", heard: "", judge: null}
+];
+
+// ---------- 事件紀錄 ----------
+function logEvent(msg) {
+var line = "[" + fmtTime(now()) + "] " + msg;
+S.events.push(line);
+var box = $("eventLog");
+if (box) {
+if (S.events.length === 1) box.textContent = "";
+box.textContent += (box.textContent? "\n": "") + line;
+box.scrollTop = box.scrollHeight;
+}
+}
+
+// ---------- 人名表 ----------
+function parseNames() {
+var raw = $("nameList").value || "";
+var parts = raw.split(/[,，、]/);
+var out = [];
+for (var i = 0; i < parts.length; i++) {
+var n = parts[i].trim();
+if (n) out.push(n);
+}
+return out;
+}
+$("btnNames").addEventListener("click", function () {
+S.names = parseNames();
+logEvent("人名表已更新：" + S.names.join("、"));
+$("btnNames").textContent = "已更新 ✓";
+setTimeout(function () { $("btnNames").textContent = "更新人名表";}, 1600);
+});
+
+// ---------- 招呼觸發 ----------
+var bannerTimer = null;
+function showBanner(name) {
+$("bannerBig").textContent = "你同 " + name + " 講緊嘢";
+$("banner").style.display = "block";
+if (bannerTimer) clearTimeout(bannerTimer);
+bannerTimer = setTimeout(hideBanner, 9000);
+}
+function hideBanner() { $("banner").style.display = "none";}
+$("bannerClose").addEventListener("click", hideBanner);
+$("btnTestBanner").addEventListener("click", function () {
+showBanner(S.names[0] || "John");
+if (navigator.vibrate) navigator.vibrate([200, 100, 200]);
+logEvent("手動試彈提示（唔計入觸發次數）");
+});
+
+function checkGreeting(text) {
+var lower = text.toLowerCase();
+var greetings = ["hi", "hello", "hey", "哈囉", "喂", "早晨", "你好"];
+for (var i = 0; i < S.names.length; i++) {
+var name = S.names[i];
+var idx = lower.indexOf(name.toLowerCase());
+if (idx === -1) continue;
+// 人名前後一小段要有招呼字眼，先當觸發
+var windowText = lower.slice(Math.max(0, idx - 14), idx + name.length + 14);
+var hasGreet = false;
+for (var g = 0; g < greetings.length; g++) {
+if (windowText.indexOf(greetings[g])!== -1) { hasGreet = true; break;}
+}
+if (!hasGreet) continue;
+var t = Date.now();
+if (S.lastTrigger[name] && t - S.lastTrigger[name] < 15000) continue; // 15 秒冷卻
+S.lastTrigger[name] = t;
+S.triggerCount++;
+S.triggerLastText = name + "（" + fmtTime(now()) + "）";
+$("triggerCount").textContent = S.triggerCount;
+$("triggerLast").textContent = S.triggerLastText;
+if (navigator.vibrate) navigator.vibrate([200, 100, 200]);
+showBanner(name);
+logEvent("★ 招呼觸發：「" + text + "」→ 認到 " + name + "，已震動＋彈提示");
+return;
+}
+}
+
+// ---------- 五句測試 ----------
+function renderSentences() {
+var wrap = $("sentences");
+wrap.innerHTML = "";
+SENTENCES.forEach(function (s, i) {
+var div = document.createElement("div");
+div.className = "sentence" + (S.activeSentence === i? " active": "");
+var heardHtml = s.heard
+? esc(s.heard)
+: '<span class="none">（未有 —— 揀呢句，照稿讀出嚟）</span>';
+div.innerHTML =
+'<div class="target">第 ' + (i + 1) + ' 句：' + esc(s.target) + "</div>" +
+'<div class="note">考：' + esc(s.tag) + "</div>" +
+'<div class="heard">聽到：' + heardHtml + "</div>" +
+'<div class="pickline"><button type="button" class="btn" data-pick="' + i + '">揀呢句嚟讀</button></div>' +
+'<div class="judge">' +
+'<button type="button" class="ok' + (s.judge === true? " sel": "") + '" data-judge="' + i + ':1">啱 ✓</button>' +
+'<button type="button" class="no' + (s.judge === false? " sel": "") + '" data-judge="' + i + ':0">錯 ✗</button>' +
+"</div>";
+wrap.appendChild(div);
+});
+wrap.querySelectorAll("[data-pick]").forEach(function (b) {
+b.addEventListener("click", function () {
+S.activeSentence = parseInt(b.getAttribute("data-pick"), 10);
+SENTENCES[S.activeSentence].heard = "";
+logEvent("揀咗第 " + (S.activeSentence + 1) + " 句嚟讀");
+renderSentences();
+});
+});
+wrap.querySelectorAll("[data-judge]").forEach(function (b) {
+b.addEventListener("click", function () {
+var parts = b.getAttribute("data-judge").split(":");
+var idx = parseInt(parts[0], 10);
+SENTENCES[idx].judge = parts[1] === "1";
+logEvent("第 " + (idx + 1) + " 句判定：" + (SENTENCES[idx].judge? "啱": "錯") +
+"｜稿：「" + SENTENCES[idx].target + "」｜聽到：「" + (SENTENCES[idx].heard || "（冇記錄）") + "」");
+renderSentences();
+renderScore();
+});
+});
+}
+function score() {
+var judged = 0, ok = 0;
+SENTENCES.forEach(function (s) {
+if (s.judge!== null) { judged++; if (s.judge) ok++;}
+});
+return { judged: judged, ok: ok};
+}
+function renderScore() {
+var sc = score();
+if (sc.judged === 0) { $("scoreLine").textContent = "成績：未判任何一句"; return;}
+var pct = Math.round((sc.ok / sc.judged) * 100);
+var line = "成績：判咗 " + sc.judged + "／5 句，啱 " + sc.ok + " 句（" + pct + "%）";
+if (sc.judged === 5) line += pct >= 80? " —— 過關參考線 80%，達標": " —— 過關參考線 80%，未達標";
+$("scoreLine").textContent = line;
+}
+renderSentences();
+
+// ---------- 電量 ----------
+function updateBatteryUI() {
+if (S.batStartPct === null) return;
+$("batStart").textContent = S.batStartPct + "%";
+if (S.batNowPct!== null) {
+$("batNow").textContent = S.batNowPct + "%";
+var drop = S.batStartPct - S.batNowPct;
+$("batDrop").textContent = (drop > 0? "−": "") + Math.abs(drop) + "%";
+if (S.startedAt && drop > 0) {
+var hrs = (Date.now() - S.startedAt.getTime()) / 3600000;
+if (hrs >= 2 / 60) {
+$("batPerHour").textContent = (drop / hrs).toFixed(1) + "%／小時";
+}
+}
+}
+$("batCharging").textContent = S.batCharging === null? "—": (S.batCharging? "叉緊電": "冇叉電（用緊電池）");
+}
+function initBattery() {
+if (!navigator.getBattery) {
+$("batCharging").textContent = "呢部機／瀏覽器冇提供電量 API";
+logEvent("電量：navigator.getBattery 唔支援，電量關要靠人手睇狀態列");
+return;
+}
+navigator.getBattery().then(function (bat) {
+S.battery = bat;
+S.batNowPct = Math.round(bat.level * 100);
+S.batCharging = bat.charging;
+bat.addEventListener("levelchange", function () {
+S.batNowPct = Math.round(bat.level * 100);
+updateBatteryUI();
+});
+bat.addEventListener("chargingchange", function () {
+S.batCharging = bat.charging;
+logEvent("充電狀態變咗：" + (bat.charging? "開始叉電": "停咗叉電"));
+updateBatteryUI();
+});
+updateBatteryUI();
+}).catch(function () {
+logEvent("電量：攞唔到電池資料");
+});
+}
+initBattery();
+
+// ---------- 儲存顯示 ----------
+function updateStorageUI() {
+var mb = S.totalBytes / (1024 * 1024);
+$("storMB").textContent = mb.toFixed(1) + " MB";
+var pct = (S.totalBytes / (1024 * 1024 * 1024)) * 100;
+$("storPct").textContent = pct.toFixed(2) + "%";
+$("storageBar").style.width = Math.min(100, pct) + "%";
+if (S.startedAt && S.totalBytes > 0) {
+var hrs = (Date.now() - S.startedAt.getTime()) / 3600000;
+if (hrs >= 1 / 60) $("storPerHour").textContent = (mb / hrs).toFixed(1) + " MB／小時";
+}
+}
+
+// ---------- 音量錶 ----------
+function startMeter() {
+if (!S.analyser) return;
+var data = new Uint8Array(S.analyser.frequencyBinCount);
+function frame() {
+if (!S.running) return;
+S.analyser.getByteFrequencyData(data);
+var sum = 0;
+for (var i = 0; i < data.length; i++) sum += data[i];
+var avg = sum / data.length; // 0-255
+$("meter").style.width = Math.min(100, (avg / 128) * 100) + "%";
+S.rafId = requestAnimationFrame(frame);
+}
+frame();
+}
+
+// ---------- 語音辨識 ----------
+var SR = window.SpeechRecognition || window.webkitSpeechRecognition || null;
+if (!SR) {
+$("supportNote").textContent = "注意：呢個瀏覽器冇 Web Speech 辨識（webkitSpeechRecognition）。請用 Android 版 Chrome 開呢頁再試；轉字關喺呢度行唔到，但電量／儲存／事件紀錄照行。";
+} else {
+$("supportNote").textContent = "辨識語言：廣東話（yue-Hant-HK），經 Chrome／Google 免費服務處理。";
+}
+
+function startRecognition() {
+if (!SR ||!S.recogWanted) return;
+var r;
+try { r = new SR();} catch (e) { logEvent("辨識：起唔到（" + e.message + "）"); return;}
+S.recog = r;
+r.lang = S.recogLang;
+r.continuous = true;
+r.interimResults = true;
+r.maxAlternatives = 1;
+
+r.onresult = function (ev) {
+S.lastResultAt = Date.now();
+if (S.gapStart) {
+var gap = Date.now() - S.gapStart;
+if (gap > S.maxGapMs) S.maxGapMs = gap;
+S.gapStart = null;
+$("gapMax").textContent = (S.maxGapMs / 1000).toFixed(0) + " 秒";
+}
+var interim = "";
+for (var i = ev.resultIndex; i < ev.results.length; i++) {
+var res = ev.results[i];
+var txt = res[0].transcript;
+if (res.isFinal) {
+var clean = txt.trim();
+if (clean) {
+S.transcripts.push({ time: fmtTime(now()), text: clean});
+var li = document.createElement("li");
+li.innerHTML = '<span class="t">' + fmtTime(now()) + "</span>" + esc(clean);
+$("finalList").appendChild(li);
+$("liveFinalHint").textContent = "";
+if (S.activeSentence >= 0) {
+var s = SENTENCES[S.activeSentence];
+s.heard = (s.heard? s.heard + " ": "") + clean;
+renderSentences();
+}
+checkGreeting(clean);
+}
+} else {
+interim += txt;
+}
+}
+$("liveInterim").textContent = interim;
+};
+r.onerror = function (ev) {
+logEvent("辨識錯誤：" + ev.error + (document.hidden? "（當時頁面喺背景／熄屏）": ""));
+if (ev.error === "language-not-supported" && S.recogLang!== "zh-HK") {
+S.recogLang = "zh-HK";
+logEvent("辨識：yue-Hant-HK 唔支援，轉用 zh-HK 再試");
+}
+if (ev.error === "not-allowed" || ev.error === "service-not-allowed") {
+S.recogWanted = false;
+$("recState").textContent = "俾唔到咪權限，辨識停咗";
+$("dotRec").className = "dot err";
+}
+};
+r.onend = function () {
+if (document.hidden) S.hiddenWhileEnded++;
+if (!S.gapStart) S.gapStart = Date.now();
+if (S.recogWanted) {
+S.restarts++;
+$("restartCount").textContent = S.restarts;
+logEvent("辨識完咗一節，自動重啟（第 " + S.restarts + " 次）" + (document.hidden? "［當時喺背景／熄屏］": ""));
+setTimeout(function () {
+if (!S.recogWanted) return;
+try { r.start();} catch (e) { startRecognition();}
+}, 350);
+}
+};
+try {
+r.start();
+} catch (e) {
+logEvent("辨識：start 失敗（" + e.message + "）");
+}
+}
+
+// ---------- 背景／可見度 ----------
+document.addEventListener("visibilitychange", function () {
+if (!S.running) return;
+if (document.hidden) {
+S.hiddenCount++;
+S.hiddenSince = Date.now();
+$("bgCount").textContent = S.hiddenCount;
+logEvent("頁面入咗背景／熄屏（第 " + S.hiddenCount + " 次）— 由而家開始計停頓");
+if (!S.gapStart) S.gapStart = Date.now();
+} else {
+var dur = S.hiddenSince? Date.now() - S.hiddenSince: 0;
+S.hiddenTotalMs += dur;
+S.hiddenSince = null;
+logEvent("頁面返嚟前景，今次背景停咗 " + (dur / 1000).toFixed(0) + " 秒；辨識狀態：" + (S.recogWanted? "嘗試緊行": "停咗"));
+}
+});
+window.addEventListener("pagehide", function () {
+if (S.running) logEvent("頁面被收起（pagehide）");
+});
+
+// ---------- 開始／停止 ----------
+var btnMain = $("btnMain");
+btnMain.addEventListener("click", function () {
+if (!S.running) startAll(); else stopAll();
+});
+
+function startAll() {
+S.running = true;
+S.startedAt = now();
+S.stoppedAt = null;
+S.totalBytes = 0;
+S.restarts = 0;
+S.maxGapMs = 0;
+S.gapStart = null;
+S.lastResultAt = null;
+if (S.battery) {
+S.batStartPct = Math.round(S.battery.level * 100);
+S.batNowPct = S.batStartPct;
+S.batCharging = S.battery.charging;
+} else if (S.batNowPct!== null) {
+S.batStartPct = S.batNowPct;
+}
+btnMain.textContent = "■ 停止測試";
+btnMain.classList.add("running");
+$("dotRec").className = "dot on";
+$("recState").textContent = "收音中…";
+$("liveFinalHint").textContent = "講嘢啦，聽到嘅字會喺下面逐句出。";
+logEvent("=== 測試開始 ===");
+if (S.batStartPct!== null) logEvent("開始電量：" + S.batStartPct + "%（" + (S.batCharging? "叉緊電": "冇叉電") + "）");
+logEvent("裝置：" + navigator.userAgent);
+
+// 攞咪：音量錶 + 量數據大細（MediaRecorder 逐段量完即棄）
+if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
+navigator.mediaDevices.getUserMedia({ audio: true}).then(function (stream) {
+S.stream = stream;
+try {
+var AC = window.AudioContext || window.webkitAudioContext;
+S.audioCtx = new AC();
+var src = S.audioCtx.createMediaStreamSource(stream);
+S.analyser = S.audioCtx.createAnalyser();
+S.analyser.fftSize = 256;
+src.connect(S.analyser);
+startMeter();
+} catch (e) { logEvent("音量錶起唔到：" + e.message);}
+try {
+if (window.MediaRecorder) {
+S.recorder = new MediaRecorder(stream);
+S.recorder.ondataavailable = function (e) {
+if (e.data && e.data.size) {
+S.totalBytes += e.data.size; // 只加數，段數據即棄，唔保留
+updateStorageUI();
+}
+};
+S.recorder.start(5000);
+logEvent("錄音數據量度開始（每 5 秒量一段，量完即棄）");
+} else {
+logEvent("MediaRecorder 唔支援，儲存關量唔到");
+}
+} catch (e) { logEvent("MediaRecorder 起唔到：" + e.message);}
+}).catch(function (err) {
+logEvent("攞咪失敗：" + err.name + " — 音量錶同儲存量度行唔到");
+$("recState").textContent = "攞唔到咪（" + err.name + "）";
+$("dotRec").className = "dot err";
+});
+}
+
+// 辨識
+S.recogWanted = true;
+startRecognition();
+
+// 每秒更新
+S.tickTimer = setInterval(function () {
+$("elapsed").textContent = fmtDur(Date.now() - S.startedAt.getTime());
+updateStorageUI();
+if (S.gapStart) {
+var gap = Date.now() - S.gapStart;
+if (gap > S.maxGapMs) { S.maxGapMs = gap; $("gapMax").textContent = (S.maxGapMs / 1000).toFixed(0) + " 秒";}
+}
+}, 1000);
+S.batTimer = setInterval(function () {
+if (S.battery) { S.batNowPct = Math.round(S.battery.level * 100); S.batCharging = S.battery.charging;}
+updateBatteryUI();
+}, 5000);
+updateBatteryUI();
+updateStorageUI();
+}
+
+function stopAll() {
+S.running = false;
+S.stoppedAt = now();
+S.recogWanted = false;
+if (S.recog) { try { S.recog.stop();} catch (e) {} S.recog = null;}
+if (S.recorder && S.recorder.state!== "inactive") { try { S.recorder.stop();} catch (e) {}}
+S.recorder = null;
+if (S.stream) { S.stream.getTracks().forEach(function (t) { t.stop();}); S.stream = null;}
+if (S.audioCtx) { try { S.audioCtx.close();} catch (e) {} S.audioCtx = null;}
+if (S.rafId) cancelAnimationFrame(S.rafId);
+if (S.tickTimer) clearInterval(S.tickTimer);
+if (S.batTimer) clearInterval(S.batTimer);
+$("meter").style.width = "0%";
+$("liveInterim").textContent = "";
+btnMain.textContent = "▶ 開始測試";
+btnMain.classList.remove("running");
+$("dotRec").className = "dot";
+$("recState").textContent = "已停止（錄音數據已棄）";
+if (S.battery) { S.batNowPct = Math.round(S.battery.level * 100);}
+updateBatteryUI();
+var durTxt = S.startedAt? fmtDur(S.stoppedAt.getTime() - S.startedAt.getTime()): "—";
+logEvent("=== 測試停止 === 全程 " + durTxt +
+"；結束電量 " + (S.batNowPct!== null? S.batNowPct + "%": "未知") +
+"；量過錄音數據共 " + (S.totalBytes / (1024 * 1024)).toFixed(1) + " MB（已全棄）");
+}
+
+// ---------- 下載紀錄 ----------
+$("btnDownload").addEventListener("click", function () {
+var lines = [];
+lines.push("純收音探針 —— 測試紀錄");
+lines.push("產生時間：" + fmtClock(now()));
+lines.push("裝置／瀏覽器：" + navigator.userAgent);
+lines.push("");
+lines.push("");
+lines.push("開始：" + (S.startedAt? fmtClock(S.startedAt): "未開始過"));
+lines.push("結束：" + (S.stoppedAt? fmtClock(S.stoppedAt): (S.running? "仲行緊": "—")));
+if (S.startedAt) {
+var endT = S.stoppedAt || now();
+lines.push("全程：" + fmtDur(endT.getTime() - S.startedAt.getTime()));
+}
+lines.push("");
+lines.push("");
+lines.push("開始電量：" + (S.batStartPct!== null? S.batStartPct + "%": "攞唔到"));
+lines.push("結束／而家電量：" + (S.batNowPct!== null? S.batNowPct + "%": "攞唔到"));
+if (S.batStartPct!== null && S.batNowPct!== null) {
+var drop = S.batStartPct - S.batNowPct;
+lines.push("跌咗：" + drop + "%");
+if (S.startedAt && drop > 0) {
+var hrs = ((S.stoppedAt || now()).getTime() - S.startedAt.getTime()) / 3600000;
+if (hrs > 0) lines.push("推算每小時食電：" + (drop / hrs).toFixed(1) + "%／小時（閘口參考 ≤8%）");
+}
+}
+lines.push("充電狀態：" + (S.batCharging === null? "未知": (S.batCharging? "叉緊電": "冇叉電")));
+lines.push("");
+lines.push("");
+var mb = S.totalBytes / (1024 * 1024);
+lines.push("全程量過錄音數據：" + mb.toFixed(2) + " MB（只喺記憶體量度，已全棄，冇寫入儲存、冇另外上傳）");
+if (S.startedAt && S.totalBytes > 0) {
+var hrs2 = ((S.stoppedAt || now()).getTime() - S.startedAt.getTime()) / 3600000;
+if (hrs2 > 0) lines.push("推算每小時佔：" + (mb / hrs2).toFixed(1) + " MB／小時");
+}
+lines.push("對 1GB 上限用咗：" + ((S.totalBytes / (1024 * 1024 * 1024)) * 100).toFixed(2) + "%");
+lines.push("");
+lines.push("");
+lines.push("入背景／熄屏次數：" + S.hiddenCount);
+lines.push("背景總時間：" + (S.hiddenTotalMs / 1000).toFixed(0) + " 秒");
+lines.push("辨識重啟次數：" + S.restarts + "（其中背景期間結束 " + S.hiddenWhileEnded + " 次）");
+lines.push("最長無辨識結果停頓：" + (S.maxGapMs / 1000).toFixed(0) + " 秒");
+lines.push("");
+lines.push("");
+lines.push("人名表：" + S.names.join(", "));
+lines.push("觸發次數：" + S.triggerCount + "；最後一次：" + S.triggerLastText);
+lines.push("");
+lines.push("");
+SENTENCES.forEach(function (s, i) {
+lines.push("第 " + (i + 1) + " 句（" + s.tag + "）");
+lines.push(" 稿： " + s.target);
+lines.push(" 聽到：" + (s.heard || "（冇記錄）"));
+lines.push(" 判定：" + (s.judge === null? "未判": (s.judge? "啱": "錯")));
+});
+var sc = score();
+lines.push("成績：判咗 " + sc.judged + "／5，啱 " + sc.ok + (sc.judged? "（" + Math.round((sc.ok / sc.judged) * 100) + "%）": ""));
+lines.push("");
+lines.push("");
+if (S.transcripts.length === 0) lines.push("（冇）");
+S.transcripts.forEach(function (t) { lines.push(t.time + " " + t.text);});
+lines.push("");
+lines.push("");
+if (S.events.length === 0) lines.push("（冇）");
+S.events.forEach(function (e) { lines.push(e);});
+lines.push("");
+lines.push("");
+lines.push("・語音辨識經 Chrome／Google 免費服務（語言設定 " + S.recogLang + "），唔係部機本機引擎。");
+lines.push("・熄屏後瀏覽器停收音係預期行為；上面第一關數字就係實測結果。");
+lines.push("・呢份紀錄由頁面即場產生，本頁冇將紀錄傳去任何伺服器；但語音辨識本身經 Google 服務處理（見頁面說明）。");
+
+var blob = new Blob([lines.join("\n")], { type: "text/plain;charset=utf-8"});
+var url = URL.createObjectURL(blob);
+var a = document.createElement("a");
+var d = now();
+function p(n) { return (n < 10? "0": "") + n;}
+a.href = url;
+a.download = "純收音探針紀錄-" + d.getFullYear() + p(d.getMonth() + 1) + p(d.getDate()) + "-" + p(d.getHours()) + p(d.getMinutes()) + ".txt";
+document.body.appendChild(a);
+a.click();
+document.body.removeChild(a);
+setTimeout(function () { URL.revokeObjectURL(url);}, 4000);
+logEvent("已下載紀錄檔");
+});
+
+logEvent("頁面已開，撳「開始測試」就得");
+})();
+</script>
+</body>
+</html>
